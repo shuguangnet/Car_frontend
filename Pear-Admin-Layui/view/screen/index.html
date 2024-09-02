@@ -1,0 +1,436 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>大数据可视化平台</title>
+
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <link rel="stylesheet" href="css/comon0.css">
+    <style>
+        .adduser li {
+            /*line-height:.42rem;*/
+            font-size: .18rem;
+            margin-bottom: .08rem;
+        }
+        
+        .adduser li p {
+            border: 1px solid rgba(25, 186, 139, .17);
+            color: rgba(255, 255, 255, .6);
+        }
+        
+        .grid {
+            margin-top: 5%;
+            width: 80%;
+            height: 10px;
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            grid-column-gap: 14px;
+        }
+        
+        .line {
+            position: relative;
+            width: 90%;
+            height: 7px;
+        }
+        
+        .line::before,
+        .line::after {
+            content: '';
+            position: absolute;
+            width: 4.5rem;
+            height: 100%;
+            border-radius: 7px;
+            background-color: #FF0000;
+        }
+        
+        .line::before {
+            animation: first-line ease-in-out 4s var(--delay) infinite alternate;
+        }
+        
+        .line::after {
+            bottom: 0;
+            background-color: #B22222;
+            width: calc(80% - 10px);
+            animation: second-line ease-in-out 4s var(--delay) infinite alternate;
+        }
+        
+        .line:nth-child(1) {
+            --delay: calc(-0.1s);
+        }
+        
+        @keyframes first-line {
+            70% {
+                width: calc(80% - 10px);
+            }
+            100% {
+                background-color: #FF0000;
+            }
+        }
+        
+        .barbox li {
+            font-size: .7rem;
+            color: #ffeb7b;
+            padding: 0.05rem 0;
+            font-family: electronicFont, "sans-serif";
+            font-weight: bold;
+        }
+    </style>
+</head>
+<script type="text/javascript">
+    $(document).ready(function() {
+        var html = $(".wrap ul").html()
+        $(".wrap ul").append(html)
+        var ls = $(".wrap li").length / 2 + 1
+        i = 0
+        ref = setInterval(function() {
+            i++
+            if (i == ls) {
+                i = 1
+                $(".wrap ul").css({
+                    marginTop: 0
+                })
+                $(".wrap ul").animate({
+                    marginTop: -'.52' * i + 'rem'
+                }, 1000)
+            }
+            $(".wrap ul").animate({
+                marginTop: -'.52' * i + 'rem'
+            }, 1000)
+
+
+        }, 2400);
+
+
+
+        var html2 = $(".adduser ul").html()
+        $(".adduser ul").append(html2)
+        var ls2 = $(".adduser li").length / 2 + 1
+        a = 0
+        ref = setInterval(function() {
+            a++
+            if (a == ls2) {
+                a = 1
+                $(".adduser ul").css({
+                    marginTop: 0
+                })
+                $(".adduser ul").animate({
+                    marginTop: -'.4' * a + 'rem'
+                }, 800)
+            }
+            $(".adduser ul").animate({
+                marginTop: -'.4' * a + 'rem'
+            }, 800)
+
+
+        }, 4300);
+
+
+
+
+
+
+
+
+    })
+</script>
+
+<body style='overflow:-Scroll;overflow-y:hidden'>
+    <div class="loading">
+        <div class="loadbox"> <img src="images/loading.gif"> 页面加载中... </div>
+    </div>
+    <div class="mainbox" style="margin-top:5% ;">
+        <ul class="clearfix">
+            <li>
+                <div class="boxall" style="height: 4rem">
+                    <div class="alltitle">系统状态</div>
+
+                    <div class="sycm">
+                        <ul class="clearfix" style="display: flex;flex-direction: row;justify-content: center;">
+                            <li>
+                                <h2 class="load-connect" style="color: orange;">连接中</h2>
+                                <span>在线状态(Online)</span></li>
+
+                            <li>
+                                <h2 class="load-delay">0(MS)</h2>
+                                <span>网络延迟(Network)</span></li>
+                        </ul>
+
+
+
+                    </div>
+                    <div class="sycm">
+                        <div class="tit02"><span>实时数据</span></div>
+                        <ul class="clearfix" style="display: flex;flex-direction: row;justify-content: center;">
+                            <li>
+                                <h2 id="today_amount">待加载...</h2><span>今日成功订单数量 </span></li>
+
+                            <li>
+                                <h2 id="today2_amount">待加载...</h2><span> 今日失败订单数量</span></li>
+
+                        </ul>
+                        <ul class="clearfix" style="display: flex;flex-direction: row;justify-content: center;padding-top: 30px;">
+                            <li>
+                                <h2 id="yes_amount">待加载...</h2><span>昨日成功订单数量 </span></li>
+
+                            <li>
+                                <h2 id="yes2_amount">待加载...</h2><span> 昨日失败订单数量</span></li>
+
+                        </ul>
+                    </div>
+                    <!-- <div class="boxfoot"></div> -->
+                </div>
+                <div class="boxall" style="height: 4rem">
+                    <div class="alltitle">系统状态</div>
+
+                    <div class="sycm">
+                        <ul class="clearfix" style="display: flex;flex-direction: row;justify-content: center;">
+                            <li>
+                                <h2 id="today_total_money">待加载...</h2><span>今日流水额</span></li>
+
+                            <li>
+                                <h2 id="yesday_total_money">待加载...</h2><span>昨日流水额</span></li>
+                        </ul>
+
+
+
+                    </div>
+                    <div class="sycm">
+                        <div class="tit02"><span>信息统计</span></div>
+                        <ul class="clearfix">
+                            <li>
+                                <h2 id="today_total_day">待加载...</h2><span>今日日租总成交 </span></li>
+
+                            <li>
+                                <h2 id="today_total_hour">待加载...</h2><span>今日时租总成交</span></li>
+                            <li>
+                                <h2 id="today2_total_money">待加载...</h2><span> 今日未支付金额</span></li>
+
+                        </ul>
+                        <ul class="clearfix">
+                            <li>
+                                <h2 id="total_user">待加载...</h2><span>用户数量 </span></li>
+
+                            <li>
+                                <h2 id="total_car">待加载...</h2><span> 车辆数量</span></li>
+                            <li>
+                                <h2 id="total_repair">待加载...</h2><span> 维修单数</span></li>
+
+                        </ul>
+                    </div>
+                    <!-- <div class="boxfoot"></div> -->
+                </div>
+            </li>
+            <li>
+                <div class="bar">
+                    <div class="barbox ">
+                        <ul class="clearfix">
+                            <li class="pulll_left counter" id="total_order">
+                                待加载...
+                            </li>
+                            <li class="pulll_left counter" id="total_money">待加载...</li>
+                        </ul>
+                    </div>
+                    <div class="barbox2">
+                        <ul class="clearfix">
+                            <li class="pulll_left">订单总数</li>
+                            <li class="pulll_left">总结算金额</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="map">
+                    <div class="map1"><img src="images/lbx.png"></div>
+                    <div class="map2"><img src="images/jt.png"></div>
+                    <div class="map3"><img src="images/map.png"></div>
+                    <div class="map4" id="map_1"></div>
+                </div>
+
+            </li>
+            <li>
+                <div class="boxall" style="height:8.2rem">
+                    <div class="alltitle">订单监控</div>
+
+
+                    <div class="addnew">
+                        <div class="tit02"><span>最新订单</span></div>
+                        <div class="adduser" style="height: 7.0rem">
+                            <ul id="orders">
+                                <!-- 循环订单 -->
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="boxfoot"></div>
+                </div>
+
+
+            </li>
+        </ul>
+
+    </div>
+    <div class="back"></div>
+    <script type="text/javascript" src="js/echarts.min.js"></script>
+    <script type="text/javascript" src="js/echarts-gl.min.js"></script>
+    <script language="JavaScript" src="js/echarts-tool.js"></script>
+    <script type="text/javascript" src="js/timelineOption.js"></script>
+    <script type="text/javascript" src="../../assets/token.js"></script>
+
+
+
+    <script type="text/javascript">
+    </script>
+
+    <script type="text/javascript" src="js/jquery.waypoints.min.js"></script>
+    <script type="text/javascript" src="js/jquery.countup.min.js"></script>
+
+    <script type="text/javascript">
+        var urls = 'http://216.83.40.9:3008';
+        getcount()
+        getorder()
+        setInterval(function() {
+                console.log("1")
+                getcount()
+                getorder()
+            }, 60000)
+            // 获取订单
+        function getorder() {
+            $.ajax({
+                url: `${api}/api/getorder`,
+                type: 'post',
+                contentType: 'application/json',
+                headers: {
+                    Authorization: window.localStorage.getItem('token')
+                },
+                success: function(response) {
+                    // 处理成功的响应
+                    let orders = response.data;
+                    var ul = $("#orders");
+                    for (let i = 0; i <= 15; i++) {
+                        // var dates=new Date(orders[i].addtime)
+                        function formatDateTime(dateTime) {
+                            const dateObj = new Date(dateTime);
+                            const year = dateObj.getFullYear();
+                            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                            const day = String(dateObj.getDate()).padStart(2, '0');
+                            const hours = String(dateObj.getHours()).padStart(2, '0');
+                            const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+                            const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+                            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+                        }
+                        dates = formatDateTime(orders[i].inTime);
+                        if (orders[i].mode == 0) {
+                            label = '<b style="color: #7c7cff;">';
+                            paytype = "按时租定";
+                        }
+
+                        if (orders[i].mode == 1) {
+                            label = '<b style="color: green;">';
+                            paytype = "按天租定";
+                        }
+
+
+                        if (orders[i].orderStatus == 1) {
+                            var zhuangtai = "已支付";
+                            var li = `<li><p><b style="color:#b7a642;">车型：${orders[i].carModel}-车牌号：${orders[i].carLicense}-租借人：${orders[i].userName}</b><br>${zhuangtai} - ￥${orders[i].orderMoney} - -${label}-${paytype}</b> - ${dates}</p></li>`
+                        } else if (orders[i].orderStatus == 0) {
+                            var zhuangtai = "未支付";
+                            var li = `<li><p><b style="color:#b7a642;">车型：${orders[i].carModel}-车牌号：${orders[i].carLicense}-租借人：${orders[i].userName}</b><br>${zhuangtai} - ￥${orders[i].orderMoney} - -${label}-${paytype}</b> - ${dates}</p></li>`
+                        }
+
+                        ul.append(li);
+                    }
+
+                },
+                error: function(xhr, status, error) {
+                    // 处理请求错误
+                    console.error(error);
+                }
+            });
+        }
+        // 获取统计信息
+        function getcount() {
+            $.ajax({
+                url: `${api}/api/getcount`,
+                type: 'post',
+                contentType: 'application/json',
+                headers: {
+                    Authorization: window.localStorage.getItem('token')
+                },
+                success: function(response) {
+                    // 渲染总订单数量
+                    $("#total_order").html(response.data.total_orders ? response.data.total_orders : "未知");
+                    // 渲染总金额
+                    $("#total_money").html(response.data.total_moneys ? response.data.total_moneys : "未知");
+                    // 渲染今日日租金额
+                    $("#today_total_day").html(response.data.today_total_day ? response.data.today_total_day : "未知");
+                    // 渲染今日时租金额
+                    $("#today_total_hour").html(response.data.today_total_hour ? response.data.today_total_hour : "未知");
+                    // 渲染今日成功订单
+                    $("#today_amount").html(response.data.today_amount ? response.data.today_amount : "未知");
+                    // 渲染今日失败订单
+                    $("#today2_amount").html(response.data.today2_amount ? response.data.today2_amount : "未知");
+                    // 渲染今日失败金额
+                    $("#today2_total_money").html(response.data.today2_total_money ? response.data.today2_total_money : "未知");
+                    // 渲染昨日成功订单
+                    $("#yes_amount").html(response.data.yes_amount ? response.data.yes_amount : "未知");
+                    // 渲染昨日失败订单
+                    $("#yes2_amount").html(response.data.yes2_amount ? response.data.yes2_amount : "未知");
+                    // 渲染今日流水额
+                    $("#today_total_money").html(response.data.today_total_money ? response.data.today_total_money : "未知");
+                    // 渲染昨日流水额
+                    $("#yesday_total_money").html(response.data.yesday_total_money ? response.data.yesday_total_money : "未知");
+                    // 渲染用户总数
+                    $("#total_user").html(response.data.total_user ? response.data.total_user : "未知");
+                    // 渲染车辆总数
+                    $("#total_car").html(response.data.total_car ? response.data.total_car : "未知");
+                    // 渲染维修总数
+                    $("#total_repair").html(response.data.total_repair ? response.data.total_repair : "未知");
+                    $('.counter').countUp();
+
+                },
+                error: function(xhr, status, error) {
+                    // 处理请求错误
+                    console.error(error);
+                }
+            });
+        }
+        //websocket配置
+        // 创建 WebSocket 对象
+
+        // const websocketGateway = 'ws://216.83.40.9:3000';
+        // let connectionTimer;
+        // let delayTimer;
+        // let timestamp = new Date().getTime();
+        // let connectWebsocket = () => {
+        //     clearInterval(connectionTimer);
+        //     clearTimeout(delayTimer);
+
+        //     const ws = new WebSocket(websocketGateway + '/getscreen');
+        //     // 连接成功的回调函数
+        //     ws.onopen = () => {
+        //         console.log("websocket已链接");
+        //         ws.send('向服务器端发送信息' + Math.random());
+        //         $('.load-connect').css('color', 'green').html('已连接');
+        //         $('.load-delay').html(((new Date()).getTime() - timestamp) + "(MS)");
+        //     };
+        //     // 接受到服务器发送的信息时的回调函数
+        //     ws.onmessage = (e) => {
+        //         console.log('收到服务器响应的消息', e.data);
+        //     }
+        //     ws.onclose = () => {
+        //         $('.load-connect').css('color', 'red').html('已断开');
+        //         // 发生异常断开连接,自动重连
+        //         delayTimer = setTimeout(connectWebsocket, 1000);
+        //     };
+        //     connectionTimer = setInterval(() => {
+        //         timestamp = new Date().getTime();
+        //         ws.send("PING");
+        //     }, 900);
+
+        // };
+        // connectWebsocket();
+    </script>
+
+</body>
+
+</html>

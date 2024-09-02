@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>管理轮播图</title>
+    <link rel="stylesheet" href="../../component/pear/css/pear.css" />
+    <style>
+        .expand.pear-btn:hover {
+            color: currentColor;
+            background: none;
+        }
+        
+        .expand.pear-btn {
+            border: 1px solid rgba(255, 255, 255, 0)
+        }
+    </style>
+    <script src="../../assets/token.js"></script>
+
+</head>
+
+<body class="pear-container">
+    <div class="layui-form-item">
+        <label class="layui-form-label">id</label>
+        <div class="layui-input-block">
+            <input type="text" name="93gfd" required lay-verify="required" id="idnew" placeholder="请输入输入框内容" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">新闻类型</label>
+        <div class="layui-input-block">
+            <input type="text" name="v91v" required lay-verify="required" id="classnew" placeholder="请输入输入框内容" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">新闻标题</label>
+        <div class="layui-input-block">
+            <input type="text" name="v91v" required lay-verify="required" id="titlenew" placeholder="请输入输入框内容" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">发布时间</label>
+        <div class="layui-input-block">
+            <input type="text" name="460ps" required lay-verify="required" id="pub_datenew" placeholder="请输入输入框内容" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+
+    <div id="edit">
+        <div id="contentnew"></div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="formDemo" onclick="editnews()">立即提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+    </div>
+</body>
+
+<script src="../../component/layui/layui.js"></script>
+<script src="../../component/pear/pear.js"></script>
+<script src="../../assets/type.js"></script>
+<script src="../../assets/user.js"></script>
+<script src="../../assets/jquery-1.9.1.min.js"></script>
+<script>
+    layui.use(['tinymce', 'context'], function() {
+        const context = layui.context;
+        var tinymce = layui.tinymce
+        var id = context.get("newsid")
+        var title = context.get("newstitle")
+        var newsclass = context.get("newsclass")
+        var pub_date = context.get("newspub_date")
+        var content = context.get("newscontent")
+        var edit = tinymce.render({
+            elem: "#edit",
+            height: 400
+        });
+        console.log(title, content, newsclass, pub_date)
+        edit.getContent()
+        document.querySelector("#idnew").value = id
+        document.querySelector("#titlenew").value = title
+        document.querySelector("#classnew").value = newsclass
+        document.querySelector("#pub_datenew").value = pub_date
+        document.querySelector("#contentnew").innerHTML = content
+    });
+</script>
+
+</body>
+
+</html>

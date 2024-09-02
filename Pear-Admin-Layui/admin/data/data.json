@@ -1,0 +1,68 @@
+[{
+        "id": 1,
+        "title": "工作空间",
+        "icon": "layui-icon layui-icon-console",
+        "type": 0,
+        "href": "",
+        "children": [{
+            "id": 11,
+            "title": "控制后台",
+            "icon": "layui-icon layui-icon-console",
+            "type": 1,
+            "openType": "_iframe",
+            "href": "view/console/console2.html"
+        }, {
+            "id": 13,
+            "title": "数据分析",
+            "icon": "layui-icon layui-icon-console",
+            "type": 1,
+            "openType": "_iframe",
+            "href": "view/screen/index.html"
+        }]
+    },
+    {
+        "id": "7",
+        "title": "车辆管理",
+        "icon": "layui-icon layui-icon-template-1",
+        "type": 1,
+        "href": "view/yqzg/car.html"
+    }, {
+        "id": "9",
+        "title": "品牌管理",
+        "icon": "layui-icon layui-icon-template-1",
+        "type": 1,
+        "href": "view/yqzg/brand.html"
+    }, {
+        "id": "2",
+        "title": "用户管理",
+        "icon": "layui-icon layui-icon-template-1",
+        "type": 1,
+        "href": "view/yqzg/user.html"
+    },
+    {
+        "id": "4",
+        "title": "维修管理",
+        "icon": "layui-icon layui-icon-template-1",
+        "type": 1,
+        "href": "view/yqzg/repair.html"
+    }, {
+        "id": "8",
+        "title": "停车场管理",
+        "icon": "layui-icon layui-icon-template-1",
+        "type": 1,
+        "href": "view/yqzg/parking.html"
+    },
+    {
+        "id": "5",
+        "title": "订单管理",
+        "icon": "layui-icon layui-icon-template-1",
+        "type": 1,
+        "href": "view/yqzg/order.html"
+    }, {
+        "id": "18",
+        "title": "订单评价",
+        "icon": "layui-icon layui-icon-template-1",
+        "type": 1,
+        "href": "view/yqzg/comment.html"
+    }
+]

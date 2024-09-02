@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>管理停车场</title>
+    <link rel="stylesheet" href="../../component/pear/css/pear.css" />
+    <style>
+        .expand.pear-btn:hover {
+            color: currentColor;
+            background: none;
+        }
+        
+        .expand.pear-btn {
+            border: 1px solid rgba(255, 255, 255, 0)
+        }
+    </style>
+    <script src="../../assets/token.js"></script>
+</head>
+
+<body class="pear-container">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <form id="userForm" class="layui-form" action="">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <label class="layui-form-label">用户名</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="realName" placeholder="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-inline" style="margin-left: 50px;">
+                        <button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="user-query">
+								<i class="layui-icon layui-icon-search"></i>
+								查询
+							</button>
+                        <button type="reset" class="pear-btn pear-btn-md">
+								<i class="layui-icon layui-icon-refresh"></i>
+								重置
+							</button>
+                        <button type="button" class="pear-btn pear-btn-md expand">
+							</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <table id="user-table" lay-filter="user-table"></table>
+        </div>
+    </div>
+
+    <script type="text/html" id="user-toolbar">
+        <button class="pear-btn pear-btn-primary pear-btn-md" lay-event="add">
+				<i class="layui-icon layui-icon-add-1"></i>
+				新增
+			</button>
+        <button class="pear-btn pear-btn-danger pear-btn-md" lay-event="batchRemove">
+				<i class="layui-icon layui-icon-delete"></i>
+				删除
+			</button>
+    </script>
+
+    <script type="text/html" id="user-bar">
+        <button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="edit"><i
+					class="layui-icon layui-icon-edit"></i></button>
+
+    </script>
+
+    <script type="text/html" id="user-enable">
+        <input type="checkbox" name="enable" value="{{d.id}}" lay-skin="switch" lay-text="启用|禁用" lay-filter="user-enable" checked="{{ d.enable == 0 ? 'true' : 'false' }}">
+    </script>
+    <!-- //照片模板 -->
+    <script type="text/html" id="photoTpl">
+        <div style="cursor: pointer;" lay-event="showPhoto">
+            <img src="{{d.carPhoto}}" style="max-width:100px;max-height:100px;" />
+        </div>
+    </script>
+
+
+    <script type="text/html" id="user-sex">
+        {{#if (d.sex == 1) { }}
+        <span>男</span> {{# }else if(d.sex == 2){ }}
+        <span>女</span> {{# } }}
+    </script>
+
+    <script type="text/html" id="user-login">
+        {{#if (d.login == 0) { }}
+        <span>在线</span> {{# }else if(d.sex == 1){ }}
+        <span>离线</span> {{# } }}
+    </script>
+
+    <script type="text/html" id="user-createTime">
+        {{layui.util.toDateString(d.createTime, 'yyyy-MM-dd')}}
+    </script>
+
+    <div style="display: none;">
+        <div class="layer-top">
+            <br />
+            <h3>上侧弹层内容...</h3>
+        </div>
+    </div>
+
+    <script src="../../component/layui/layui.js"></script>
+    <script src="../../component/pear/pear.js"></script>
+    <script src="../../assets/jquery-1.9.1.min.js"></script>
+    <script src="../../assets/type.js"></script>
+    <script src="../../assets/token.js"></script>
+    <script type="text/html" id="statusTpl">
+        {{# if(d.enable == 0) { }}
+        <span>禁用中</span> {{# } else if(d.enable == 1) { }}
+        <span>启用中</span> {{# } else { }}
+        <span>未知状态</span> {{# } }}
+    </script>
+    <script type="text/html" id="statusTpl2">
+        {{# if(d.type == 0) { }}
+        <span>室内</span> {{# } else if(d.type == 1) { }}
+        <span>室外</span> {{# } else { }}
+        <span>未知状态</span> {{# } }}
+    </script>
+    <script>
+        layui.use(['table', 'form', 'jquery', 'drawer', 'dropdown', 'upload', 'toast', 'area'], function() {
+            let table = layui.table;
+            let form = layui.form;
+            let $ = layui.jquery;
+            let drawer = layui.drawer;
+            let dropdown = layui.dropdown;
+            var upload = layui.upload;
+            var toast = layui.toast;
+            var area = layui.area;
+            let MODULE_PATH = "/system/user/";
+
+            formToggle({
+                elem: "#userForm",
+            });
+
+            function formToggle(options) {
+                var defaultsOpt = {
+                    isExpand: false,
+                    prefixIcon: "layui-icon",
+                    toggleIcon: ['layui-icon-down', 'layui-icon-up'],
+                    toggleText: ['展开', '折叠'],
+                }
+                var opt = $.extend({}, defaultsOpt, options);
+                var elem = opt.elem; // 绑定的表单元素,必填
+                var min = opt.min; // 最小显示数,默认显示一行
+                var isExpand = opt.isExpand; // 初始展开
+                var prefixIcon = opt.prefixIcon + " "; // 图标前缀
+                var toggleIcon = opt.toggleIcon; // 折叠和展开时的图标类[unExpandIcon, ExpandIcon]
+                var toggleText = opt.toggleText; // 折叠和展开时的文本
+
+                var eleDOM = $(elem + " .layui-inline");
+                var firstElTop = eleDOM.first().offset().top;
+                var targetEl = eleDOM.filter(function(index) {
+                    var isGtMin = (index + 1) > min;
+                    var isGtFirstElTop = $(this).offset().top > firstElTop;
+                    var isNeqLast = (index + 1) != eleDOM.length;
+                    return min ? isGtMin && isNeqLast : isGtFirstElTop && isNeqLast;
+                });
+
+                var unExpandIcon = prefixIcon + toggleIcon[0];
+                var expandIcon = prefixIcon + toggleIcon[1];
+                var unExpandText = toggleText[0];
+                var expandText = toggleText[1];
+                var btnSelector = elem + " .expand";
+                $(btnSelector).append("<i></i>")
+                if (targetEl.length > 0) {
+                    if (isExpand) {
+                        $(btnSelector).prepend("<span>" + expandText + "</span>");
+                        $(btnSelector + ">i").addClass(expandIcon);
+                    } else {
+                        $(btnSelector).prepend("<span>" + unExpandText + "</span>")
+                        $(btnSelector + ">i").addClass(unExpandIcon)
+                        targetEl.addClass("layui-hide");
+                    }
+                    $(btnSelector).click(function() {
+                        isExpand = !isExpand;
+                        if (isExpand) {
+                            $(btnSelector + ">span").html(expandText);
+                            $(btnSelector + ">i").removeClass(unExpandIcon).addClass(expandIcon);
+                            targetEl.removeClass("layui-hide")
+                        } else {
+                            $(btnSelector + ">span").html(unExpandText);
+                            $(btnSelector + ">i").removeClass(expandIcon).addClass(unExpandIcon);
+                            targetEl.addClass("layui-hide")
+                        }
+                    })
+                }
+            }
+
+            $.ajax({
+                url: `${api}/api/AllParking`,
+                type: 'POST',
+                success: function(res) {
+                    // 渲染表格
+                    table.render({
+                        elem: '#user-table',
+                        data: res.data,
+                        page: true,
+                        cols: [
+                            [{
+                                type: 'checkbox'
+                            }, {
+                                field: 'id',
+                                title: '停车场ID',
+                                align: 'center'
+                            }, {
+                                field: 'parkingName',
+                                title: '名称',
+                                align: 'center'
+                            }, {
+                                field: 'address',
+                                title: '地址',
+                                align: 'center',
+
+                            }, {
+                                field: 'carsNumber',
+                                title: '最大容纳',
+                                align: 'center',
+
+                            }, {
+                                field: 'coord',
+                                title: '坐标',
+                                align: 'center',
+                            }, {
+                                field: 'type',
+                                title: '类型',
+                                align: 'center',
+                                templet: '#statusTpl2'
+
+                            }, {
+                                field: 'enable',
+                                title: '状态',
+                                align: 'center',
+                                templet: '#statusTpl'
+                            }, {
+                                toolbar: '#user-bar',
+                                title: '操作',
+                                align: 'left',
+                                fixed: 'right'
+                            }]
+                        ],
+                        skin: 'line',
+                        toolbar: '#user-toolbar',
+                        defaultToolbar: [{
+                                layEvent: 'refresh',
+                                icon: 'layui-icon-refresh'
+                            },
+                            'filter', 'print', 'exports'
+                        ]
+                    });
+                }
+            });
+
+            table.on('tool(user-table)', function(obj) {
+                if (obj.event === 'remove') {
+                    console.log(obj)
+                    window.remove(obj);
+                } else if (obj.event === 'edit') {
+                    window.edit(obj);
+                } else if (obj.event === 'showPhoto') {
+                    window.showPhoto(obj);
+                } else if (obj.event === 'weixiu') {
+                    window.weixiu(obj);
+                }
+            });
+            window.showPhoto = function(obj) {
+                // 显示放大后的图片
+                layer.photos({
+                    photos: {
+                        "data": [{
+                            "src": obj.data.brand_logo // 图片的链接
+                        }]
+                    },
+                    shadeClose: true,
+                    closeBtn: 1
+                });
+            }
+
+            table.on('toolbar(user-table)', function(obj) {
+                if (obj.event === 'add') {
+                    window.add();
+                } else if (obj.event === 'refresh') {
+                    window.refresh();
+                } else if (obj.event === 'batchRemove') {
+                    window.batchRemove(obj);
+                }
+            });
+
+            form.on('submit(user-query)', function(data) {
+                table.reload('user-table', {
+                    where: data.field
+                })
+                return false;
+            });
+            // 监听表格中图片的点击事件
+
+            form.on('switch(user-enable)', function(obj) {
+                layer.tips(this.value + ' ' + this.name + '：' + obj.elem.checked, obj.othis);
+            });
+
+            window.add = function() {
+                    drawer.open({
+                        legacy: false,
+                        offset: "r",
+                        area: "40%",
+                        content: `
+                    <form class="layui-form" action="" onsubmit="return false" style="margin-top:50px;">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">停车场名称</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="parkingNames" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">省市区</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="areas" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">详细地址</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="addresss" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">类型</label>
+                            <div class="layui-input-block">
+                                <select name="city" lay-verify="required" id="types">
+                                    <option value="">请选择类型</option>
+                                    <option value="0">室外</option>
+                                    <option value="1">室内</option>
+                                  </select>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">最大容纳量</label>
+                            <div class="layui-input-block">
+                               
+                              <input type="text" name="dya5n" required id="carsNumbers" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">坐标</label>
+                            <div class="layui-input-block">
+                                <a href="https://api.map.baidu.com/lbsapi/getpoint/index.html" style="color:red;font-size:12px">点我在线获取坐标</a>
+                              <input type="text" name="dya5n" required id="coords" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">状态</label>
+                            <div class="layui-input-block">
+                                <select name="city" lay-verify="required" id="enables">
+                                    <option value="">请选择状态</option>
+                                    <option value="0">禁用</option>
+                                    <option value="1">开启</option>
+                                  </select>
+                            </div>
+                          </div>
+                        <div class="layui-form-item">
+                          <div class="layui-input-block">
+                            <button class="layui-btn" lay-submit lay-filter="formDemo" onclick="addParking()">立即提交</button>
+                            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                          </div>
+                        </div>
+                      </form>`,
+                    })
+                    layui.use('form', function() {
+                        var form = layui.form;
+                        form.render(); // 渲染表单元素
+                    });
+                    layui.use('area', function() {
+                        var area = layui.area;
+                        area.render({
+                            elem: '#areas',
+                            change: function(res) {
+                                console.log('省市区选择器已渲染');
+                                console.log(res);
+                            }
+                        });
+                    });
+
+                },
+
+
+                //修改
+                window.edit = function(obj) {
+                    var objs = obj.data
+                    console.log(objs)
+                    drawer.open({
+                        legacy: false,
+                        offset: "r",
+                        area: "30%",
+                        content: `
+                        <form class="layui-form" action="" onsubmit="return false" style="margin-top:50px;">
+                            
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">停车场Id</label>
+                                <div class="layui-input-block">
+                                  <input type="text" name="dya5n" required id="ided" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.id}>
+                                </div>
+                              </div><div class="layui-form-item">
+                                <label class="layui-form-label">停车场名称</label>
+                                <div class="layui-input-block">
+                                  <input type="text" name="dya5n" required id="parkingNameed" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.parkingName}>
+                                </div>
+                              </div>
+                              <div class="layui-form-item">
+                                <label class="layui-form-label">省市区</label>
+                                <div class="layui-input-block">
+                                  <input type="text" name="dya5n" required id="areaed" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.area}>
+                                </div>
+                              </div>
+                              <div class="layui-form-item">
+                                <label class="layui-form-label">详细地址</label>
+                                <div class="layui-input-block">
+                                  <input type="text" name="dya5n" required id="addressed" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.address}>
+                                </div>
+                              </div>
+                              <div class="layui-form-item">
+                                <label class="layui-form-label">类型</label>
+                                <div class="layui-input-block">
+                                    <select name="city" lay-verify="required" id="typeed">
+                                        <option value="">请选择类型</option>
+                                        <option value="0" ${obj.data.type == '0' ? 'selected' : ''}>室内</option>
+                                        <option value="1" ${obj.data.type == '1' ? 'selected' : ''}>室外</option>
+                                      </select>
+                                </div>
+                              </div>
+                              <div class="layui-form-item">
+                                <label class="layui-form-label">最大容纳量</label>
+                                <div class="layui-input-block">
+                                    
+                                  <input type="text" name="dya5n" required id="carsNumbered" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.carsNumber}>
+                                </div>
+                              </div>
+                              <div class="layui-form-item">
+                                <label class="layui-form-label">坐标</label>
+                                <a href="https://api.map.baidu.com/lbsapi/getpoint/index.html" style="color:red;font-size:12px">点我在线获取坐标</a>
+                                <div class="layui-input-block">
+                                  <input type="text" name="dya5n" required id="coorded" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.coord}>
+                                </div>
+                              </div>
+                              <div class="layui-form-item">
+                                <label class="layui-form-label">状态</label>
+                                <div class="layui-input-block">
+                                    <select name="city" lay-verify="required" id="enableed">
+                                        <option value="">请选择状态</option>
+                                        <option value="0" ${obj.data.enable === '0' ? 'selected' : ''}>禁用中</option>
+                                        <option value="1" ${obj.data.enable === '1' ? 'selected' : ''}>启用中</option>
+                                      </select>
+                                </div>
+                              </div>
+                            <div class="layui-form-item">
+                              <div class="layui-input-block">
+                                <button class="layui-btn" lay-submit lay-filter="formDemo" onclick="editParking()">立即提交</button>
+                                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                              </div>
+                            </div>
+                          </form>`,
+                    })
+                    layui.use('form', function() {
+                        var form = layui.form;
+                        form.render(); // 渲染表单元素
+                    });
+
+                }
+                //执行实例
+            var uploadInst = upload.render({
+                elem: '#test1' //绑定元素
+                    ,
+                url: '/upload/' //上传接口
+                    ,
+                done: function(res) {
+                    //上传完毕回调
+                },
+                error: function() {
+                    //请求异常回调
+                }
+            });
+            window.remove = function(obj) {
+                layer.confirm('确定要删除该停车场', {
+                    icon: 3,
+                    title: '提示'
+                }, function(index) {
+                    layer.close(index);
+                    let loading = layer.load();
+                    $.ajax({
+                        url: api + "/api/delete_parking",
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            ids: obj.data.id
+                        }),
+                        type: 'post',
+                        success: function(result) {
+                            layer.close(loading);
+                            if (result.status == 200) {
+                                success(result.message);
+                                time();
+                            } else {
+                                error(result.message)
+                            }
+                        }
+                    })
+                });
+            }
+
+            window.batchRemove = function(obj) {
+                let data = table.checkStatus(obj.config.id).data;
+                if (data.length === 0) {
+                    layer.msg("未选中数据", {
+                        icon: 3,
+                        time: 1000
+                    });
+                    return false;
+                }
+                let ids = "";
+                for (let i = 0; i < data.length; i++) {
+                    ids += data[i].id + ",";
+                }
+                ids = ids.substr(0, ids.length - 1);
+                layer.confirm('确定要删除这些停车场', {
+                    icon: 3,
+                    title: '提示'
+                }, function(index) {
+                    layer.close(index);
+                    let loading = layer.load();
+                    $.ajax({
+                        url: `${api}/api/delete_parking`,
+                        contentType: 'application/json',
+                        type: 'post',
+                        data: JSON.stringify({
+                            ids: ids
+                        }),
+                        success: function(result) {
+                            layer.close(loading);
+                            if (result.status = 200) {
+                                success(result.message);
+                                time();
+                            } else {
+                                error(result.message);
+                            }
+                        }
+                    })
+                });
+            }
+            window.refresh = function(param) {
+                table.reload('user-table');
+            }
+
+        })
+    </script>
+</body>
+
+</html>

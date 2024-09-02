@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>管理用户</title>
+    <link rel="stylesheet" href="../../component/pear/css/pear.css" />
+    <style>
+        .expand.pear-btn:hover {
+            color: currentColor;
+            background: none;
+        }
+        
+        .expand.pear-btn {
+            border: 1px solid rgba(255, 255, 255, 0)
+        }
+    </style>
+    <script src="../../assets/token.js"></script>
+</head>
+
+<body class="pear-container">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <form id="userForm" class="layui-form" action="">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <label class="layui-form-label">用户名</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="realName" placeholder="" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-inline" style="margin-left: 50px;">
+                        <button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="user-query">
+								<i class="layui-icon layui-icon-search"></i>
+								查询
+							</button>
+                        <button type="reset" class="pear-btn pear-btn-md">
+								<i class="layui-icon layui-icon-refresh"></i>
+								重置
+							</button>
+                        <button type="button" class="pear-btn pear-btn-md expand">
+							</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <table id="user-table" lay-filter="user-table"></table>
+        </div>
+    </div>
+
+    <script type="text/html" id="user-toolbar">
+        <button class="pear-btn pear-btn-primary pear-btn-md" lay-event="add">
+				<i class="layui-icon layui-icon-add-1"></i>
+				新增
+			</button>
+        <button class="pear-btn pear-btn-danger pear-btn-md" lay-event="batchRemove">
+				<i class="layui-icon layui-icon-delete"></i>
+				删除
+			</button>
+    </script>
+
+    <script type="text/html" id="user-bar">
+        <button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="edit"><i
+					class="layui-icon layui-icon-edit"></i></button>
+        <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="remove"><i
+					class="layui-icon layui-icon-delete"></i></button>
+        <button class="pear-btn pear-btn-warming pear-btn-sm" lay-event="weixiu"><i class="layui-icon layui-icon-vercode"></i></button>
+    </script>
+
+    <script type="text/html" id="user-enable">
+        <input type="checkbox" name="enable" value="{{d.id}}" lay-skin="switch" lay-text="启用|禁用" lay-filter="user-enable" checked="{{ d.enable == 0 ? 'true' : 'false' }}">
+    </script>
+    <!-- //照片模板 -->
+    <script type="text/html" id="photoTpl">
+        <div style="cursor: pointer;" lay-event="showPhoto">
+            <img src="{{d.carPhoto}}" style="max-width:50px;max-height:100px;" />
+        </div>
+    </script>
+
+
+    <script type="text/html" id="user-sex">
+        {{#if (d.sex == 1) { }}
+        <span>男</span> {{# }else if(d.sex == 2){ }}
+        <span>女</span> {{# } }}
+    </script>
+
+    <script type="text/html" id="user-login">
+        {{#if (d.login == 0) { }}
+        <span>在线</span> {{# }else if(d.sex == 1){ }}
+        <span>离线</span> {{# } }}
+    </script>
+
+    <script type="text/html" id="user-createTime">
+        {{layui.util.toDateString(d.createTime, 'yyyy-MM-dd')}}
+    </script>
+
+    <div style="display: none;">
+        <div class="layer-top">
+            <br />
+            <h3>上侧弹层内容...</h3>
+        </div>
+    </div>
+
+    <script src="../../component/layui/layui.js"></script>
+    <script src="../../component/pear/pear.js"></script>
+    <script src="../../assets/jquery-1.9.1.min.js"></script>
+    <script src="../../assets/type.js"></script>
+    <script src="../../assets/token.js"></script>
+    <script type="text/html" id="statusTpl">
+        {{# if(d.carStatus == 0) { }}
+        <span>未出租</span> {{# } else if(d.carStatus == 1) { }}
+        <span>出租中</span> {{# } else if(d.carStatus == 2) { }}
+        <span>维修中</span> {{# } }}
+    </script>
+    <script type="text/html" id="statusTpl2">
+        {{# if(d.energy == 0) { }}
+        <span>汽油</span> {{# } else if(d.energy == 1) { }}
+        <span>充电</span> {{# } }}
+    </script>
+    <script>
+        layui.use(['table', 'form', 'jquery', 'drawer', 'dropdown', 'upload', 'toast'], function() {
+            let table = layui.table;
+            let form = layui.form;
+            let $ = layui.jquery;
+            let drawer = layui.drawer;
+            let dropdown = layui.dropdown;
+            var upload = layui.upload;
+            var toast = layui.toast;
+            let MODULE_PATH = "/system/user/";
+
+            formToggle({
+                elem: "#userForm",
+            });
+
+            function formToggle(options) {
+                var defaultsOpt = {
+                    isExpand: false,
+                    prefixIcon: "layui-icon",
+                    toggleIcon: ['layui-icon-down', 'layui-icon-up'],
+                    toggleText: ['展开', '折叠'],
+                }
+                var opt = $.extend({}, defaultsOpt, options);
+                var elem = opt.elem; // 绑定的表单元素,必填
+                var min = opt.min; // 最小显示数,默认显示一行
+                var isExpand = opt.isExpand; // 初始展开
+                var prefixIcon = opt.prefixIcon + " "; // 图标前缀
+                var toggleIcon = opt.toggleIcon; // 折叠和展开时的图标类[unExpandIcon, ExpandIcon]
+                var toggleText = opt.toggleText; // 折叠和展开时的文本
+
+                var eleDOM = $(elem + " .layui-inline");
+                var firstElTop = eleDOM.first().offset().top;
+                var targetEl = eleDOM.filter(function(index) {
+                    var isGtMin = (index + 1) > min;
+                    var isGtFirstElTop = $(this).offset().top > firstElTop;
+                    var isNeqLast = (index + 1) != eleDOM.length;
+                    return min ? isGtMin && isNeqLast : isGtFirstElTop && isNeqLast;
+                });
+
+                var unExpandIcon = prefixIcon + toggleIcon[0];
+                var expandIcon = prefixIcon + toggleIcon[1];
+                var unExpandText = toggleText[0];
+                var expandText = toggleText[1];
+                var btnSelector = elem + " .expand";
+                $(btnSelector).append("<i></i>")
+                if (targetEl.length > 0) {
+                    if (isExpand) {
+                        $(btnSelector).prepend("<span>" + expandText + "</span>");
+                        $(btnSelector + ">i").addClass(expandIcon);
+                    } else {
+                        $(btnSelector).prepend("<span>" + unExpandText + "</span>")
+                        $(btnSelector + ">i").addClass(unExpandIcon)
+                        targetEl.addClass("layui-hide");
+                    }
+                    $(btnSelector).click(function() {
+                        isExpand = !isExpand;
+                        if (isExpand) {
+                            $(btnSelector + ">span").html(expandText);
+                            $(btnSelector + ">i").removeClass(unExpandIcon).addClass(expandIcon);
+                            targetEl.removeClass("layui-hide")
+                        } else {
+                            $(btnSelector + ">span").html(unExpandText);
+                            $(btnSelector + ">i").removeClass(expandIcon).addClass(unExpandIcon);
+                            targetEl.addClass("layui-hide")
+                        }
+                    })
+                }
+            }
+
+            $.ajax({
+                url: `${api}/api/AllCar`,
+                type: 'POST',
+                success: function(res) {
+                    // 渲染表格
+                    table.render({
+                        elem: '#user-table',
+                        data: res.data,
+                        page: true,
+                        cols: [
+                            [{
+                                type: 'checkbox'
+                            }, {
+                                field: 'carId',
+                                title: '车辆ID',
+                                align: 'center',
+                                width: 100
+                            }, {
+                                field: 'carModel',
+                                title: '型号',
+                                align: 'center',
+                                width: 100
+                            }, {
+                                field: 'carColour',
+                                title: '颜色',
+                                align: 'center',
+                                width: 100
+                            }, {
+                                field: 'carPhoto',
+                                title: '照片',
+                                align: 'center',
+                                templet: '#photoTpl',
+                                width: 100
+                            }, {
+                                field: 'carLicense',
+                                title: '车牌号',
+                                align: 'center',
+                                width: 100
+                            }, {
+                                field: 'carContent',
+                                title: '简介',
+                                align: 'center',
+                                width: 100
+                            }, {
+                                field: 'carSecurityDeposit',
+                                title: '押金',
+                                align: 'center',
+                                width: 100
+                            }, {
+                                field: 'carDayMoney',
+                                title: '日租金',
+                                align: 'center',
+                                width: 100
+                            }, {
+                                field: 'carHoursMoney',
+                                title: '时租金',
+                                align: 'center',
+                                width: 100
+                            }, {
+                                field: 'parkingName',
+                                title: '停车场',
+                                align: 'center',
+                                width: 200
+                            }, {
+                                field: 'energy',
+                                title: '能源',
+                                align: 'center',
+                                templet: '#statusTpl2',
+                                width: 100
+                            }, {
+                                field: 'emass',
+                                title: '电量',
+                                align: 'center',
+                                width: 100
+                            }, {
+                                field: 'omass',
+                                title: '油量',
+                                align: 'center',
+                                width: 100
+                            }, {
+                                field: 'km',
+                                title: '续航',
+                                align: 'center',
+                                width: 100
+                            }, {
+                                field: 'brand_name_ch',
+                                title: '品牌',
+                                align: 'center',
+                                width: 100
+                            }, {
+                                field: 'carStatus',
+                                title: '状态',
+                                align: 'center',
+                                templet: '#statusTpl',
+                                width: 100
+                            }, {
+                                toolbar: '#user-bar',
+                                title: '操作',
+                                align: 'left',
+                                width: 200
+                            }]
+                        ],
+                        skin: 'line',
+                        toolbar: '#user-toolbar',
+                        defaultToolbar: [{
+                                layEvent: 'refresh',
+                                icon: 'layui-icon-refresh'
+                            },
+                            'filter', 'print', 'exports'
+                        ]
+                    });
+                }
+            });
+
+            table.on('tool(user-table)', function(obj) {
+                if (obj.event === 'remove') {
+                    console.log(obj)
+                    window.remove(obj);
+                } else if (obj.event === 'edit') {
+                    window.edit(obj);
+                } else if (obj.event === 'showPhoto') {
+                    window.showPhoto(obj);
+                } else if (obj.event === 'weixiu') {
+                    window.weixiu(obj);
+                }
+            });
+            window.showPhoto = function(obj) {
+                // 显示放大后的图片
+                layer.photos({
+                    photos: {
+                        "data": [{
+                            "src": obj.data.carPhoto // 图片的链接
+                        }]
+                    },
+                    shadeClose: true,
+                    closeBtn: 1
+                });
+            }
+            window.weixiu = function(obj) {
+                // 显示放大后的图片
+                drawer.open({
+                    legacy: false,
+                    offset: "r",
+                    area: "40%",
+                    content: `
+                <form class="layui-form" action="" onsubmit="return false" style="margin-top:50px;">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">车辆ID</label>
+                        <div class="layui-input-block">
+                          <input type="text" name="dya5n" required id="carIds" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.carId}>
+                        </div>
+                      </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">维修原因</label>
+                        <div class="layui-input-block">
+                          <input type="text" name="dya5n" required id="repairReasons" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                        </div>
+                      </div>
+                      <div class="layui-form-item">
+                        <label class="layui-form-label">维修价格</label>
+                        <div class="layui-input-block">
+                          <input type="text" name="dya5n" required id="repairMoneys" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input">
+                        </div>
+                      </div>
+                      
+                    <div class="layui-form-item">
+                      <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="formDemo" onclick="addrepair()">立即提交</button>
+                        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                      </div>
+                    </div>
+                  </form>`,
+                })
+
+            }
+            table.on('toolbar(user-table)', function(obj) {
+                if (obj.event === 'add') {
+                    window.add();
+                } else if (obj.event === 'refresh') {
+                    window.refresh();
+                } else if (obj.event === 'batchRemove') {
+                    window.batchRemove(obj);
+                }
+            });
+
+            form.on('submit(user-query)', function(data) {
+                table.reload('user-table', {
+                    where: data.field
+                })
+                return false;
+            });
+            // 监听表格中图片的点击事件
+
+            form.on('switch(user-enable)', function(obj) {
+                layer.tips(this.value + ' ' + this.name + '：' + obj.elem.checked, obj.othis);
+            });
+
+            window.add = function() {
+                    drawer.open({
+                        legacy: false,
+                        offset: "r",
+                        area: "40%",
+                        content: `
+                    <form class="layui-form" action="" onsubmit="return false" style="margin-top:50px;">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">型号</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carModels" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">车辆颜色</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carColours" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">车辆照片</label>
+                            <div class="layui-input-block">
+                                    <input type="file"  id="uploadFile">
+                                    <input type="text"  id="carPhotos" style="display:none">
+                                    
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">车牌号</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carLicenses" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item layui-form-text">
+                            <label class="layui-form-label">内容</label>
+                            <div class="layui-input-block">
+                              <textarea name="m2sug" placeholder="" id="carContents" class="layui-textarea"></textarea>
+                            </div>
+                          </div>
+                          
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">车辆押金</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carSecurityDeposits" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">日租金</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carDayMoneys" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">时租金</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carHoursMoneys" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">车辆状态</label>
+                            <div class="layui-input-block">
+                                <select name="city" lay-verify="required" id="carStatuss">
+                                    <option value="">请选择车辆状态</option>
+                                    <option value="0">未出租</option>
+                                    <option value="1">出租中</option>
+                                    <option value="2">维修中</option>
+                                  </select>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">停车场</label>
+                            <div class="layui-input-block">
+                                <select name="city" lay-verify="required" id="parking_ids">
+                                    <option value="">请选择停车场</option>
+                                  </select>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">能源类型</label>
+                            <div class="layui-input-block">
+                                <select name="city" lay-verify="required" id="energys">
+                                    <option value="">请选择能源类型</option>
+                                    <option value="0">汽油</option>
+                                    <option value="1">充电</option>
+                                  </select>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">剩余电量(0为无)</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="emasss" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">剩余油量(0为无)</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="omasss" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">续航公里</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="kms" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" >
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">品牌</label>
+                            <div class="layui-input-block">
+                                <select name="city" lay-verify="required" id="brand_ids">
+                                    <option value="">请选择品牌</option>
+                                    
+                                  </select>
+                            </div>
+                          </div>
+                        <div class="layui-form-item">
+                          <div class="layui-input-block">
+                            <button class="layui-btn" lay-submit lay-filter="formDemo" onclick="addcar()">立即提交</button>
+                            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                          </div>
+                        </div>
+                      </form>`,
+                    })
+                    layui.use('form', function() {
+                        var form = layui.form;
+                        form.render(); // 渲染表单元素
+                    });
+                    // 使用 AJAX 获取停车场数据并填充下拉列表
+                    $.ajax({
+                        url: `${api}/api/AllParking`,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        success: function(response) {
+                            if (Array.isArray(response.data)) {
+                                var parkings = response.data;
+                                var parkingSelect = $('#parking_ids');
+                                parkings.forEach(function(parking) {
+                                    var option = $('<option>').attr('value', parking.id).text(parking.parkingName);
+                                    parkingSelect.append(option);
+                                });
+                                layui.form.render('select');
+                            } else {
+                                console.error(response.data);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(error);
+                        }
+                    });
+                    // 使用 AJAX 获取品牌数据并填充下拉列表
+                    $.ajax({
+                        url: `${api}/api/AllBrand`,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        success: function(response) {
+                            if (Array.isArray(response.data)) {
+                                var brands = response.data;
+                                var brandSelect = $('#brand_ids');
+                                brands.forEach(function(brand) {
+                                    var option = $('<option>').attr('value', brand.id).text(brand.brand_name_ch);
+                                    brandSelect.append(option);
+                                });
+                                layui.form.render('select');
+                            } else {
+                                console.error('Invalid brands data:', response.data);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Failed to fetch brands:', error);
+                        }
+                    });
+                    // 在弹出窗口中的表单加载完成后，监听文件上传的变化
+                    $('#uploadFile').on('change', function(event) {
+                        var file = event.target.files[0];
+                        var formData = new FormData();
+                        formData.append('image', file);
+                        formData.append('token', '1c17b11693cb5ec63859b091c5b9c1b2');
+                        $.ajax({
+                            url: 'https://img.pqblog.com/api/index.php',
+                            type: 'POST',
+                            data: formData,
+                            contentType: false,
+                            processData: false,
+                            success: function(res) {
+                                document.querySelector("#carPhotos").value = res.url
+                                success(res.message + res.url)
+                            },
+                            error: function(xhr, status, error) {
+                                error('上传图片失败:', error);
+                            }
+                        });
+                    })
+                },
+
+
+                //修改
+                window.edit = function(obj) {
+                    var objs = obj.data
+                    console.log(objs)
+                    drawer.open({
+                        legacy: false,
+                        offset: "r",
+                        area: "30%",
+                        content: `
+                    <form class="layui-form" action="" onsubmit="return false" style="margin-top:50px;">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">车辆ID</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carIded" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.carId}>
+                            </div>
+                          </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">型号</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carModeled" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.carModel}>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">车辆颜色</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carColoured" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.carColour}>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">车辆照片</label>
+                            <div class="layui-input-block">
+                                    <input type="file"  id="uploadFile">
+                                    <input type="text"  id="carPhotoed" style="display:none" value=${obj.data.carPhoto}>
+                                    
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">车牌号</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carLicenseed" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.carLicense}>
+                            </div>
+                          </div>
+                          <div class="layui-form-item layui-form-text">
+                            <label class="layui-form-label">内容</label>
+                            <div class="layui-input-block">
+                              <textarea name="m2sug" placeholder="" id="carContented" class="layui-textarea" >${obj.data.carContent}</textarea>
+                            </div>
+                          </div>
+                          
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">车辆押金</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carSecurityDeposited" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.carSecurityDeposit}>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">日租金</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carDayMoneyed" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.carDayMoney}>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">时租金</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="carHoursMoneyed" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.carHoursMoney}>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">车辆状态</label>
+                            <div class="layui-input-block">
+                                <select name="city" lay-verify="required" id="carStatused">
+                                    <option value="">请选择车辆状态</option>
+                                    <option value="0" ${obj.data.carStatus === '0' ? 'selected' : ''}>未出租</option>
+                                    <option value="1" ${obj.data.carStatus === '1' ? 'selected' : ''}>出租中</option>
+                                    <option value="2" ${obj.data.carStatus === '2' ? 'selected' : ''}>维修中</option>
+                                </select>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">停车场</label>
+                            <div class="layui-input-block">
+                                <select name="city" lay-verify="required" id="parking_ided">
+                                    <option value="">请选择停车场</option>
+                                  </select>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">能源类型</label>
+                            <div class="layui-input-block">
+                                <select name="city" lay-verify="required" id="energyed">
+                                    <option value="">请选择能源类型</option>
+                                    <option value="0" ${obj.data.energy == '0' ? 'selected' : ''}>汽油</option>
+                                    <option value="1" ${obj.data.energy == '1' ? 'selected' : ''}>充电</option>
+                                  </select>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">剩余电量(0为无)</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="emassed" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.emass}>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">剩余油量(0为无)</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="omassed" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.omass}>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">续航公里</label>
+                            <div class="layui-input-block">
+                              <input type="text" name="dya5n" required id="kmed" lay-verify="required" placeholder="请输入输入框内容" autocomplete="off" class="layui-input" value=${obj.data.km}>
+                            </div>
+                          </div>
+                          <div class="layui-form-item">
+                            <label class="layui-form-label">品牌</label>
+                            <div class="layui-input-block">
+                                <select name="brand_id" lay-verify="required" id="brand_ided">
+                                    <option value="">请选择品牌</option>
+                                  </select>
+                            </div>
+                          </div>
+                        <div class="layui-form-item">
+                          <div class="layui-input-block">
+                            <button class="layui-btn" lay-submit lay-filter="formDemo" onclick="editcar()">立即提交</button>
+                            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                          </div>
+                        </div>
+                      </form>`,
+                    })
+                    layui.use('form', function() {
+                        var form = layui.form;
+                        form.render(); // 渲染表单元素
+                    });
+                    // 使用 AJAX 获取停车场并填充下拉列表并选中自己的停车场
+                    $.ajax({
+                        url: `${api}/api/AllParking`,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        success: function(response) {
+                            if (Array.isArray(response.data)) {
+                                var parkings = response.data;
+                                var parkingSelect = $('#parking_ided');
+                                parkings.forEach(function(parking) {
+                                    var selected = (obj.data.parking_id == parking.id) ? 'selected' : '';
+                                    var option = $('<option>').attr('value', parking.id).attr('selected', selected).text(parking.parkingName);
+                                    parkingSelect.append(option);
+                                });
+                                layui.form.render('select');
+                            } else {
+                                console.error('Invalid parkings data:', response.data);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Failed to fetch parkings:', error);
+                        }
+                    });
+                    // 使用 AJAX 获取品牌数据并填充下拉列表并选中自己的品牌
+                    $.ajax({
+                        url: `${api}/api/AllBrand`,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        success: function(response) {
+                            if (Array.isArray(response.data)) {
+                                var brands = response.data;
+                                var brandSelect = $('#brand_ided');
+                                brands.forEach(function(brand) {
+                                    var selected = (obj.data.brand_id == brand.id) ? 'selected' : '';
+                                    var option = $('<option>').attr('value', brand.id).attr('selected', selected).text(brand.brand_name_ch);
+                                    brandSelect.append(option);
+                                });
+                                layui.form.render('select');
+                            } else {
+                                console.error('Invalid brands data:', response.data);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Failed to fetch brands:', error);
+                        }
+                    });
+                    // 在弹出窗口中的表单加载完成后，监听文件上传的变化
+                    $('#uploadFile').on('change', function(event) {
+                        var file = event.target.files[0];
+                        var formData = new FormData();
+                        formData.append('image', file);
+                        formData.append('token', '1c17b11693cb5ec63859b091c5b9c1b2');
+                        $.ajax({
+                            url: 'https://img.pqblog.com/api/index.php',
+                            type: 'POST',
+                            data: formData,
+                            contentType: false,
+                            processData: false,
+                            success: function(res) {
+                                document.querySelector("#carPhotoed").value = res.url
+                                success(res.message + res.url)
+                            },
+                            error: function(xhr, status, error) {
+                                error('上传图片失败:', error);
+                            }
+                        });
+                    })
+                }
+                //执行实例
+            var uploadInst = upload.render({
+                elem: '#test1' //绑定元素
+                    ,
+                url: '/upload/' //上传接口
+                    ,
+                done: function(res) {
+                    //上传完毕回调
+                },
+                error: function() {
+                    //请求异常回调
+                }
+            });
+            window.remove = function(obj) {
+                layer.confirm('确定要删除该车辆', {
+                    icon: 3,
+                    title: '提示'
+                }, function(index) {
+                    layer.close(index);
+                    let loading = layer.load();
+                    $.ajax({
+                        url: api + "/api/delete_car",
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            carIds: obj.data.carId
+                        }),
+                        type: 'post',
+                        success: function(result) {
+                            layer.close(loading);
+                            if (result.status == 200) {
+                                success(result.message);
+                                time();
+                            } else {
+                                error(result.message)
+                            }
+                        }
+                    })
+                });
+            }
+
+            window.batchRemove = function(obj) {
+                let data = table.checkStatus(obj.config.id).data;
+                if (data.length === 0) {
+                    layer.msg("未选中数据", {
+                        icon: 3,
+                        time: 1000
+                    });
+                    return false;
+                }
+                let ids = "";
+                for (let i = 0; i < data.length; i++) {
+                    ids += data[i].carId + ",";
+                }
+                ids = ids.substr(0, ids.length - 1);
+                layer.confirm('确定要删除这些车辆', {
+                    icon: 3,
+                    title: '提示'
+                }, function(index) {
+                    layer.close(index);
+                    let loading = layer.load();
+                    $.ajax({
+                        url: `${api}/api/delete_car`,
+                        contentType: 'application/json',
+                        type: 'post',
+                        data: JSON.stringify({
+                            carIds: ids
+                        }),
+                        success: function(result) {
+                            layer.close(loading);
+                            if (result.status = 200) {
+                                success(result.message);
+                                time();
+                            } else {
+                                error(result.message);
+                            }
+                        }
+                    })
+                });
+            }
+            window.refresh = function(param) {
+                table.reload('user-table');
+            }
+
+        })
+    </script>
+</body>
+
+</html>
